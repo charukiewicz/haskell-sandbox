@@ -101,4 +101,8 @@ range x y = [x..y]
    replicate n k -- takes element k and makes a list of length n from it
 -}
 
+{- LIST COMPREHENSION -}
 
+-- Haskell uses math-like set comprehension notation to build lists
+-- The following uses this notation to build a list of the first ten even natural numbers
+firstTenEven = [x*2 | x <- [1..10]]
