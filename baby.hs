@@ -106,3 +106,6 @@ range x y = [x..y]
 -- Haskell uses math-like set comprehension notation to build lists
 -- The following uses this notation to build a list of the first ten even natural numbers
 firstTenEven = [x*2 | x <- [1..10]]
+
+
+-- Comment
