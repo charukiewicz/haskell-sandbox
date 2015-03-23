@@ -105,7 +105,41 @@ range x y = [x..y]
 
 -- Haskell uses math-like set comprehension notation to build lists
 -- The following uses this notation to build a list of the first ten even natural numbers
-firstTenEven = [x*2 | x <- [1..10]]
+firstTenEven = [ x*2 | x <- [1..10] ]
 
+evenTenThroughTwenty = [ x*2 | x <- [1..10], x*2 >= 12 ]
 
--- Comment
+{- The function above have multiple parts -}
+-- Output function: x*2
+-- Variable: x
+-- Input set: x <- [1..10]
+-- Predicate: x*2 >= 12
+
+-- The next functions finds all numbers from 50 to 100 whose remainder
+-- when divded by 7 is 3:
+fiftyThroughHundredModThree = [ x | x <- [50..100], x `mod` 7 == 3 ]
+
+-- Replaces each odd number greater than 10 with "BANG!" and each
+-- odd number that's less than 10 with "BOOM!".  If a number isn't
+-- odd, throw it out of the list.
+boomBang xs = [ if x < 10 then "BOOM!" else "BANG!" | x <- xs, odd x ]
+
+-- We can have several predicates.  The following function grabs all
+-- numbers from 10 to 20, excluding 13, 15, and 19.
+tenThroughTwentyWithSkips = [ x | x <- [10..20], x /= 13, x /= 15, x /= 19] 
+
+-- NOTE: An element must satisfy all predicates to be included in the output list
+
+-- In addition to multiple predicates, we can also draw from several lists
+multiplyTwoLists' = [ x*y | x <- [2,5,10], y <- [8,10,11]]
+
+multiplyTwoLists l1 l2 = [ x*y | x <- l1, y <- l2 ]
+
+-- We can use lists that contain strings as well
+nouns = ["hobo", "frog", "pope"]
+adjectives = ["lazy", "grouchy", "scheming"]
+phraseMaker ns as = [a ++ " " ++ n | n <- ns, a <- as]
+
+-- This function replaces every element in the input list with 1 and takes its sum.
+-- "_" accepts any value and does not assign a variable name.
+length' xs = sum [ 1 | _ <- xs ]
