@@ -9,7 +9,9 @@
 
 -}
 
+{-------------}
 {- FUNCTIONS -}
+{-------------}
 
 -- First haskell function!
 doubleMe x = x + x
@@ -41,7 +43,9 @@ conanO'Brien = "It's a-me, Conan O'Brien!"
 -- For example, div 90 10 returns 9
 -- But, 90 `div` 10 also returns 9
 
-{- LISTS  -}
+{---------}
+{- LISTS -}
+{---------}
 
 -- First haskell list!  Most common datastructure in haskell
 -- Lists are homogeneous (they can only contain one data type)
@@ -80,7 +84,9 @@ someList = [1,2,3,4,5]
    elem n l	-- returns True if n is an element of l
 -}
 
+{----------}
 {- RANGES -}
+{----------}
 
 -- We can write a list using ranges
 -- [1,2,3,4,5] can bet written [1..5]
@@ -101,7 +107,9 @@ range x y = [x..y]
    replicate n k -- takes element k and makes a list of length n from it
 -}
 
+{----------------------}
 {- LIST COMPREHENSION -}
+{----------------------}
 
 -- Haskell uses math-like set comprehension notation to build lists
 -- The following uses this notation to build a list of the first ten even natural numbers
@@ -143,3 +151,17 @@ phraseMaker ns as = [a ++ " " ++ n | n <- ns, a <- as]
 -- This function replaces every element in the input list with 1 and takes its sum.
 -- "_" accepts any value and does not assign a variable name.
 length' xs = sum [ 1 | _ <- xs ]
+
+-- This function takes a string and removes everything except uppercase letters from it.
+removeNonUppercase str = [ c | c <- str, c `elem` ['A'..'Z']]
+
+-- Nested list comprehension is also possible with this notation.  The following
+-- function removes all odd numbers within nested input lists without flattening.
+removeNestedOdds xxs = [ [ x | x <- xs, even x ] | xs <- xxs ]
+xxs = [[1,3,5,2,3,1,2,4,5],[1,2,3,4,5,6,7,8,9],[1,2,4,2,1,6,3,1,3,2,3,6]]
+
+{----------}
+{- TUPLES -}
+{----------}
+
+
