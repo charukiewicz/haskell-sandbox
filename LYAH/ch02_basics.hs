@@ -5,7 +5,7 @@
 
   Use `ghci` to start the Haskell interpreter in the command line
 
-  Use `:l baby` when inside ghci to load this file and get access to all of its functions and variables
+  Use `:l basics` when inside ghci to load this file and get access to all of its functions and variables
 
 -}
 
@@ -72,16 +72,16 @@ someList = [1,2,3,4,5]
 
 {- List Manipulation Functions
 
-   length l 	-- takes a list and returns its length
-   null l 	-- returns True if the list is empty, False otherwise
-   reverse l 	-- reverses the list
-   take n l 	-- returns a list of the first n elements from l
-   drop n l 	-- returns a list ignoring the first n elements from l
-   maximum l	-- returns the largest element in a list
-   minimum l	-- returns the smallest element in a list
-   sum l	-- returns the sum of the elements in a list
-   product l	-- returns the product of the elements in a list
-   elem n l	-- returns True if n is an element of l
+   length l 	- takes a list and returns its length
+   null l		- returns True if the list is empty, False otherwise
+   reverse l 	- reverses the list
+   take n l 	- returns a list of the first n elements from l
+   drop n l 	- returns a list ignoring the first n elements from l
+   maximum l	- returns the largest element in a list
+   minimum l	- returns the smallest element in a list
+   sum l		- returns the sum of the elements in a list
+   product l	- returns the product of the elements in a list
+   elem n l		- returns True if n is an element of l
 -}
 
 {----------}
@@ -164,4 +164,47 @@ xxs = [[1,3,5,2,3,1,2,4,5],[1,2,3,4,5,6,7,8,9],[1,2,4,2,1,6,3,1,3,2,3,6]]
 {- TUPLES -}
 {----------}
 
+-- Tuples are some similarities to lists, but have specific differences which make them
+-- applicable in different situations from lists.
 
+-- Tuples are used when you know exactly how many values you want to combine.The type of
+-- a tuple depends on how many components it has and the types of each of the respective
+-- components. The components do NOT have to be homogenous; unlike a list, a tuple can
+-- contain a combination of several types.
+
+aPair = (1,2)					-- Type :: (Integer, Integer)
+aTriple = (1,2,3)				-- Type :: (Integer, Integer, Integer)
+anotherPair = ('a',1)			-- Type :: (Char, Integer)
+anotherTriple = ("abc",'d',5)	-- Type :: ([Char], Char, Integer)
+
+{- TUPLE FUNCTIONS
+
+    fst t       - takes a pair (tuple) and returns the first element
+    snd t       - takes a pair (tuple) and returns the second element
+    zip l1 l2   - takes two lists and returns a list of pairs
+-}
+
+{-----------}
+{- WRAP UP -}
+{-----------}
+
+-- Covered in this chapter:
+--  Basic Haskell Operators
+--  Functions
+--  Lists
+--  Ranges
+--  List Comprehension
+--  Tuples
+
+-- Time for a combination of list comprehension and tuples.
+-- The following expression will get a list of all possible triangle
+-- lengths whose sides are all of length 1 through 10.
+triangles = [ (a,b,c) | c <- [1..10], b <- [1..10], a <- [1..10] ]
+
+-- Now the following will only list right triangles whose sides are
+-- less than or equal to 10
+rightTriangles = [ (a,b,c) | c <- [1..10], b <- [1..c], a <- [1..b], a^2 + b^2 == c^2]
+
+-- The following will show us a right triangle with integers for all sides,
+-- whose sides are all less than or equal to 10, and whose permieter is 24
+rightTriangles' = [ (a,b,c) | c <- [1..10], b <- [1..c], a <- [1..b], a^2 + b^2 == c^2, a+b+c == 24]
