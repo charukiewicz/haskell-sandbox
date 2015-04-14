@@ -81,3 +81,89 @@ sum' (x:xs) = x + sum' xs
 capital :: String -> String
 capital "" = "Empty string, whoops!"
 capital all@(x:xs) = "The first letter of " ++ all ++ " is " ++ [x]
+
+{----------}
+{- GUARDS -}
+{----------}
+
+-- Patterns are a way of making sure a value confirms to some form
+-- and deconstructing it. But guards are a way of testing whether
+-- some property of a value (or several) are true or false.
+
+bmiTell :: (RealFloat a) => a -> String
+bmiTell bmi
+    | bmi <= 18.5 = "You're underweight, you emo, you!"
+    | bmi <= 25.0 = "You're supposedly normal.  Pffft, I bet you're ugly!"
+    | bmi <= 30.0 = "You're fat!  Lost some weight, fatty!"
+    | otherwise = "You're a whale, congratulations!"
+
+bmiTell' :: (RealFloat a) => a -> a -> String
+bmiTell' weight height
+    | weight / height ^ 2 <= 18.5 = "You're underweight, you emo, you!"
+    | weight / height ^ 2 <= 25.0 = "You're supposedly normal.  Pffft, I bet you're ugly!"
+    | weight / height ^ 2 <= 30.0 = "You're fat!  Lose some weight, fatty!"
+    | otherwise                 = "You're a whale, congratulations!"
+
+-- Lets implement our own max function.
+max' :: (Ord a) => a -> a -> a
+max' a b
+    | a > b     = a
+    | otherwise = b
+
+-- Now lets implement our own compare
+myCompare :: (Ord a) => a -> a -> Ordering
+a `myCompare` b
+    | a > b     = GT
+    | a == b    = EQ
+    | otherwise = LT
+
+{---------}
+{- WHERE -}
+{---------}
+
+-- We can use where statements to avoid having to write out the same
+-- expression over and over again in the guards.  Let's revisit the
+-- BMI functions
+
+betterBmiTell :: (RealFloat a) => a -> a -> String
+betterBmiTell weight height
+    | bmi <= 18.5 = "You're underweight, you emo, you!"
+    | bmi <= 25.0 = "You're supposedly normal.  Pffft, I bet you're ugly!"
+    | bmi <= 30.0 = "You're fat!  Lost some weight, fatty!"
+    | otherwise = "You're a whale, congratulations!"
+    where bmi = weight / height ^ 2
+
+-- We can make this even better
+
+betterBmiTell' :: (RealFloat a) => a -> a -> String
+betterBmiTell' weight height
+    | bmi <= skinny = "You're underweight, you emo, you!"
+    | bmi <= normal = "You're supposedly normal.  Pffft, I bet you're ugly!"
+    | bmi <= fat = "You're fat!  Lost some weight, fatty!"
+    | otherwise = "You're a whale, congratulations!"
+    where bmi = weight / height ^ 2
+          (skinny, normal, fat) = (18.5, 25.0, 30.0) -- this is actually pattern matching
+
+-- Here's some more pattern matching
+
+initials :: String -> String -> String
+initials firstname lastname = [f] ++ ". " ++ [l] ++ "."
+    where (f:_) = firstname
+          (l:_) = lastname
+
+-- We can define functions in the where bindings as well
+
+calcBmis :: (RealFloat a) => [(a, a)] -> [a]
+calcBmis xs = [bmi w h | (w, h) <- xs]
+    where bmi weight height = weight / height ^ 2
+
+-- Where bindings can also be nested
+
+{-------}
+{- LET -}
+{-------}
+
+-- Like where beindings, let bindings let you bind variables
+-- in a function. Unlike where bindings, which bind variables
+-- at the end of a function, let bindings allow you to bind
+-- variables anywhere and are expressions themselves.
