@@ -159,11 +159,70 @@ calcBmis xs = [bmi w h | (w, h) <- xs]
 
 -- Where bindings can also be nested
 
-{-------}
-{- LET -}
-{-------}
+{-------------------}
+{- LET-IN BINDINGS -}
+{-------------------}
 
--- Like where beindings, let bindings let you bind variables
--- in a function. Unlike where bindings, which bind variables
--- at the end of a function, let bindings allow you to bind
--- variables anywhere and are expressions themselves.
+-- Like where beindings, let bindings let you bind variables in a function.
+-- Unlike where bindings, which bind variables at the end of a function, let
+-- bindings allow you to bind variables anywhere and are expressions themselves.
+
+cylinder :: (RealFloat a) => a -> a -> a
+cylinder r h =
+    let sideArea = 2 * pi * r * h
+        topArea = pi * r ^ 2
+    in sideArea + 2 * topArea
+
+-- The difference is that let bindings are expessions themselves, but where
+-- bindings are just syntactic constructs. Let bindings can go almost anywhere.
+meaningOfLife = 4 * (let a = 9 in a + 1) + 2
+
+-- They can also be used to intruduce functions in a local scope.
+squareSomething = let square x = x * x in (square 5, square 3, square 2)
+
+-- To define several variables inline, we use semicolons.
+multiVarLet = (let a = 100; b = 200; c = 300 in a*b*c, let foo = "Hey "; bar = "there!" in foo ++ bar)
+
+-- We can also put let bindings inside list comprehensions. Lets rewrite our
+-- calcBmis function.
+calcBmis' :: (RealFloat a) => [(a,a)] -> [a]
+calcBmis' xs = [bmi | (w, h) <- xs, let bmi = w / h ^ 2]
+
+{--------------------}
+{- CASE EXPRESSIONS -}
+{--------------------}
+
+-- Case expressions are very similar to pattern matching. In fact, pattern
+-- matching is syntactic sugar for case expressions. Here's an example, the
+-- following two functions are interchangable:
+myHead :: [a] -> a
+myHead [] = error "No head for empty lists!"
+myHead (x:_) = x
+
+myHead' :: [a] -> a
+myHead' xs = case xs of [] -> error "No head for empty lists!"
+                        (x:_) -> x
+
+{-
+  The general syntax for case expressions is:
+
+    case expression of pattern -> result
+                       pattern -> result
+                       pattern -> result
+                       ...
+-}
+
+-- Case expressions can be used pretty much anywhere, as opposed to pattern
+-- matching on function parameters, which must be done when defining functions.
+describeList :: [a] -> String
+describeList xs = "The list is " ++ case xs of [] -> "empty."
+                                               [x] -> "a singleton list."
+                                               xs -> "a longer list."
+
+-- Since pattern matching in function definitions is syntactic sugar for case
+-- expressions, the above function could have been defined as follows:
+describeList' :: [a] -> String
+describeList' xs = "The list is " ++ what xs
+    where what [] = "empty."
+          what [x] = "a singleton list."
+          what xs = "a longer list."
