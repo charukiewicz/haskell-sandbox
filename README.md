@@ -19,3 +19,5 @@ The /LYAH directory is a collection of chapter notes on the (freely available) b
 * [Learn Haskell](https://github.com/bitemyapp/learnhaskell) - A github repository with a recommended Haskell learning path
 * [NICTA](https://github.com/NICTA/course) Another Haskell course
 * [FPComplete - School of Haskell](https://www.fpcomplete.com/school)
+* [What I wish I Knew When Learning Haskell](http://dev.stephendiehl.com/hask/)
+* [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia)

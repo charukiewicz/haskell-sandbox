@@ -113,4 +113,78 @@ countElements l = map (\l@(x:xs) -> (x,length l)) . group . sort $ l
 --     inits/tails - like init and tail, only they apply recurisvely to a list until
 --                   there is nothing left
 
---     isInfixOf   - searches for a sublist
+-- Lets use a fold to implement searching a list for a sublist
+search :: (Eq a) => [a] -> [a] -> Bool
+search needle haystack =
+    let nlen = length needle
+    in foldl (\acc x -> if take nlen x == needle then True else acc) False (tails haystack)
+
+--     isInfixOf   - searches for a sublist (what we just made above)
+
+--     isPrefixOf/isSuffixOf - search for a sublist at the beginning and end, respectively
+
+--     elem/notElem - check if an element is or isn't inside a list
+
+--     partition    - takes a list and a predicate and returns a pair of lists.
+--                    the first list in the result contains all the elements that
+--                    satisfy the predicate, the second contains all the ones that don't
+
+--     find         - takes a list and a predicate and returns the first element that
+--                    satisfies that predicate.  but it returns the element wrapped in
+--                    a Maybe value
+
+--    elemIndex     - returns the index of the specified element in a given list.
+--                    if not found, it returns Nothing
+
+--    elemIndices   - like elemIndex, but returns a list of indices.
+
+--    findIndex     - like find, but it maybe returns the index of the first element
+--                    that satisifes the predicate
+
+--    zip3/zip4...7 - like zip, except takes 3..7 lists
+
+--    zipWith3/zipWith4...7 - like zipWith, except take 3..7 lists
+
+--    lines         - takes a string and returns every line of that string in a
+--                    separate list
+
+--    unlines       - the inverse function of lines
+
+--    words/unwords - used to split a line of text into words or joining a list
+--                    of words into text
+
+--    nub           - takes a list and removes duplicate elements
+
+--    delete        - takes an element and a list and deletes the first occurence
+--                    of the element in the list
+
+--    \\            - the difference function. acts like a set difference, basically
+--                    for every element in the right-hand list, it removes a matching
+--                    element in the left one
+
+--    union         - acts like a function on sets. returns the untion of two lists
+
+--    intersect     - works like set intersection. returns elements found in both lists
+
+--    insert        - takes an element and a list of elements that can be sorted
+--                    and inserts it into the last ordered position
+
+-- The following functions are generic versions (use the Num typeclass instead of the
+-- Int typeclass) of their older counterparts:
+--
+--  length      -> genericLength
+--  take        -> genericTake
+--  drop        -> genericDrop
+--  splitAt     -> genericSplitAt
+--  !!          -> genericIndex
+--  replicate   -> genericReplicate
+
+-- In the following functions, the first set use == to test for equality, whereas
+-- the By ones also take an equality function (i.e. group <-> groupBy (==) )
+--  nub         -> nubBy
+--  delete      -> deleteBy
+--  union       -> unionBy
+--  intersect   -> intersectBy
+--  group       -> groupBy
+
+
