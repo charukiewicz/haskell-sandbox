@@ -20,6 +20,11 @@
 
 
 import Data.List -- has a bunch of useful functions for working with lists
+import Data.Char -- has a bunch of useful functions for working with characters
+
+-- Now, because the Data.Map module exports functions that clash with Prelude
+-- and Data.List, we do a qualified import
+import qualified Data.Map as Map -- has a bunch of useful functions related to mapping
 
 
 -- Let's use a function from the Data.List module (nub) to count the number of
@@ -187,4 +192,125 @@ search needle haystack =
 --  intersect   -> intersectBy
 --  group       -> groupBy
 
+-- The following functions also have their more general equivalents.  They take
+-- a function that determines if one element is GT, LT, or EQ to the other.
+--  sort        -> sortBy
+--  insert      -> insertBy
+--  maximum     -> maximumBy
+--  minimum     -> minimumBy
 
+{-------------}
+{- Data.Char -}
+{-------------}
+
+-- The Data.Char module exports functions that deal with characters. This is
+-- helpful when filtering and mapping over strings since they are lists of Chars.
+
+-- Data.Char exports a bunch of predicates over characters; functions that take
+-- a character and tell uis whether some assumption about it is true/false.
+
+--      isControl       - checks whther the character is a control character
+
+--      isSpace         - checks whther a character is a white-space character
+--                        (includes spaces, tabs, newlines, etc.)
+
+--      isLower         - checks whether a character is lower-cased
+
+--      isUpper         - checks whether a character is upper cased
+
+--      isAlpha         - checks whether the character is a letter
+
+--      isAlphaNum      - checks whether a character is a letter or a number
+
+--      isPrint         - checks whether a character is printable
+
+--      isDigit         - checks whether a character is a digit
+
+--      isOctDigit      - checks whether a character is an octal digit
+
+--      isHexDigit      - checks whether a character is a hex digit
+
+--      isLetter        - checks whether a character is a letter
+
+--      isMark          - checks for Unicode mark characters (letters with accents)
+
+--      isNumber        - checks whether a character is numeric
+
+--      isPunctuation   - checks whehter a character is punctuation
+
+--      isSymbol        - checks whether a character is a fancy mathematical symbol
+
+--      isSeparator     - checks for Unicode spaces and separators
+
+--      isAscii         - checks whether a character falls into the first 128 characters
+--                        of the Unicode character set
+
+--      isLatin1        - checks whether a character falls into the first 256 characters
+
+--      isAsciiUpper/Lower - checks whether a character is ASCII upper/lower-case
+
+
+-- These functions can be combined with functions like "all" from the Data.List
+-- module, which takes a predicate and a list and returns True if the predicate
+-- holds for every element in the list.
+
+--      toUpper         - converts a character to upper-case. spaces, etc. are unchanged
+
+--      toLower         - converts a character to lower-case
+
+--      toTitle         - converts a character to title-case
+
+--      digitToInt      - converts a character to Int
+
+--      intToDigit      - inverse of digitToInt (takes 0..15 and converts to lower case char)
+
+--      ord/chr         - convert characters to their corresponding numbers and vise versa
+
+-- Here is a simple Caesar cipher-like shift function, except it is not limited
+-- to only the alphabet.
+encode :: Int -> String -> String
+encode shift msg =
+    let ords = map ord msg
+        shifted = map (+ shift) ords
+    in map chr shifted
+
+-- Now let's make a decoding function, by shifting the number back the same amount
+decode :: Int -> String -> String
+decode shift msg = encode (negate shift) msg
+
+{------------}
+{- Data.Map -}
+{------------}
+
+-- Association lists (aka dictionaries) are lists that are used to store key-value
+-- pairs where the ordering does not matter.  Example below:
+
+phoneBook = 
+    [("betty","555-2938")  
+    ,("bonnie","452-2928")  
+    ,("patsy","493-2928")  
+    ,("lucille","205-2928")  
+    ,("wendy","939-8282")  
+    ,("penny","853-2492")  
+    ]
+
+-- Notice that this is just a list of pairs of strings.  The most common task
+-- when dealing with association lists is looking up some value by key. Let's
+-- make a function that looks up some value given a key.
+findKey :: (Eq k) => k -> [(k,v)] -> v
+findKey key xs = snd . head . filter (\(k,v) -> key == k) $ xs
+
+-- This function takes a key and a list, filters the list so that only matching
+-- keys remain, gets the first key-value that matches, and returns the value.
+-- However, if we search for a key that does not exist, we get a runtime error.
+
+-- Let's make a function that uses the Maybe data type to avoid this.
+findKey' :: (Eq k) => k -> [(k,v)] -> Maybe v
+findKey' key [] = Nothing
+findKey' key ((k,v):xs) = if key == k
+                             then Just v
+                             else findKey' key xs
+
+-- Now let's implement this with a fold
+findKey'' :: (Eq k) => k -> [(k,v)] -> Maybe v
+findKey'' key = foldr (\(k,v) acc -> if key == k then Just v else acc) Nothing
