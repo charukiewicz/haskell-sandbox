@@ -17,7 +17,7 @@ import qualified Data.Map as M
 -- So far we have run into a bunch of data types.  Time to make our own.
 
 -- This is how Bool is defined in the standard library
-data Bool' = False | True
+data Bool' = False' | True'
 
 {- Breakdown:
 
@@ -44,7 +44,7 @@ data Shape = Circle Float Float Float | Rectangle Float Float Float Float derivi
 -- Let's make a function that takes a shape and returns its surface
 surface :: Shape -> Float
 surface (Circle _ _ r) = pi * r ^ 2
-surface (Rectangle x1 y1 x2 y2) = (abs $ x2 - x1) * (abs $ y2 - y1)
+surface (Rectangle x1 y1 x2 y2) = abs (x2 - x1) * abs (y2 - y1)
 
 -- Notice that the type is Shape -> Float, and not something like Circle -> Float.
 -- Doing the latter is impossible, because Circle is not a type, Shape is. We
@@ -70,7 +70,7 @@ data Shape' = Circle' Point' Float | Rectangle' Point' Point' deriving (Show)
 -- Here is our new surface function
 surface' :: Shape' -> Float
 surface' (Circle' _ r) = pi * r ^ 2
-surface' (Rectangle' (Point' x1 y1) (Point' x2 y2)) = (abs $ x2 - x1) * (abs $ y2 - y1)
+surface' (Rectangle' (Point' x1 y1) (Point' x2 y2)) = abs (x2 - x1) * abs (y2 - y1)
 
 -- Now let's make a function that nudges a shape.  Takes a shape, the amount to
 -- move it on the x axis, the amount to move it on the y axis, and then returns
@@ -82,7 +82,7 @@ nudge (Rectangle' (Point' x1 y1) (Point' x2 y2)) a b = Rectangle' (Point' (x1+a)
 -- Now lets make some functions that allow us to skip having to deal with points
 -- These functions will create sahpes at the zero coords and then nudge those
 baseCircle :: Float -> Shape'
-baseCircle r = Circle' (Point' 0 0) r
+baseCircle = Circle' (Point' 0 0)
 
 baseRect :: Float -> Float -> Shape'
 baseRect width height = Rectangle' (Point' 0 0) (Point' width height)
@@ -225,24 +225,24 @@ scalarMulti :: (Num t) => Vector t -> Vector t -> t
 -- Eq typeclass. If it can be ordered, we make it an instance of the Ord typeclass.
 
 -- We declared a Person data type above.  Currently it only derives Show.  It
--- makes sense for us to compare whether or not two people are identical, so we 
+-- makes sense for us to compare whether or not two people are identical, so we
 -- can give it the Eq typeclass.
 
 {-
-        data Person = Person { firstName :: String  
-                             , lastName :: String  
-                             , age :: Int  
-                             } deriving (Eq)  
+        data Person = Person { firstName :: String
+                             , lastName :: String
+                             , age :: Int
+                             } deriving (Eq)
 -}
 
 -- We also have the Show and Read typeclasses to accomodate conversion to or
 -- from strings.
 
 {-
-        data Person = Person { firstName :: String  
-                             , lastName :: String  
-                             , age :: Int  
-                             } deriving (Eq, Show, Read)  
+        data Person = Person { firstName :: String
+                             , lastName :: String
+                             , age :: Int
+                             } deriving (Eq, Show, Read)
 -}
 
 -- We can also easily use algebraic data types to make enumerations and the
@@ -267,8 +267,8 @@ data Day = Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
 -- for an existing type.
 
 -- Let's look at the phonebook from much earlier
-phoneBook :: [(String,String)]  
-phoneBook =      
+phoneBook :: [(String,String)]
+phoneBook =
     [("betty","555-2938")
     ,("bonnie","452-2928")
     ,("patsy","493-2928")
@@ -337,3 +337,202 @@ lockers = M.fromList
 {-----------------------------}
 {- RECURSIVE DATA STRUCTURES -}
 {-----------------------------}
+
+-- We can create recursive data types, where one value of some type contains
+-- values of that type, which in turn contain more values of the same type.
+
+-- Let's use ADTs to make our own list
+data List'' a = Empty'' | Cons'' a (List'' a) deriving (Show, Read, Eq, Ord)
+
+-- Here's another version:
+data List' a = Empty' | Cons' { listHead :: a, listTail :: List' a} deriving (Show, Read, Eq, Ord)
+
+-- We can definefunctinos to be automatically infix by making them comprised of
+-- only special characters.  We can also do the same with constructurs, since
+-- they're just functions that return a data type
+infixr 5 :-:
+data List a = Empty | a :-: (List a) deriving (Show, Read, Eq, Ord)
+
+-- Here we see the fixity declaration preceding the data type.  When we define
+-- functions as operators, we can use this to give them a fixity. A fixity states
+-- how tightly the operator binds and whether it's left-associative or
+-- right-associative.  (We would use infixl for left associativity)
+
+-- Let's make a function that adds two of our lists together
+infixr 5 .++
+(.++) :: List a -> List a -> List a
+Empty .++ ys = ys
+(x :-: xs) .++ ys = x :-: (xs .++ ys)
+
+-- Let's implement a binary search tree data type
+-- A tree is either an empty ree or it's an element that contains some value
+-- and two trees.
+data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
+
+-- Now we will make two functions so that we do not have to manually build a
+-- Tree. The first is a utility function that makes a single node tree. The
+-- second allows us to insert an element into the tree.
+singleton :: a -> Tree a
+singleton x = Node x EmptyTree EmptyTree
+
+treeInsert :: (Ord a) => a -> Tree a -> Tree a
+treeInsert x EmptyTree = singleton x
+treeInsert x (Node a left right)
+    | x == a = Node x left right
+    | x < a  = Node a (treeInsert x left) right
+    | x > a  = Node a left (treeInsert x right)
+
+-- Now let's make a function that allows us to check whether an element is in a
+-- specified Tree.
+treeElem :: (Ord a) => a -> Tree a -> Bool
+treeElem x EmptyTree = False
+treeElem x (Node a left right)
+    | x == a = True
+    | x < a  = treeElem x left
+    | x > a  = treeElem x right
+
+-- Now let's play with these functions
+nums = [8,6,4,1,7,3,5]
+numsTree = foldr treeInsert EmptyTree nums
+
+{-------------------}
+{- TYPECLASSES 102 -}
+{-------------------}
+
+-- Typeclasses are like interfaces for data types. A typeclass defines some
+-- behavior (eg. comparing for equality or ordering). Types that we want to
+-- behave this way are made instances of that typeclass.
+
+-- For example, the Eq typeclass is for stuff that can be equated. It defines
+-- the functions == and /=. If we have a type (say, Car) and comparing two cars
+-- with the equality function == makes sense, then it makes sense for Car to be
+-- an instance of Eq.
+
+-- This is how Eq is defines in Prelude
+class Eq' a where
+    (.==) :: a -> a -> Bool
+    (./=) :: a -> a -> Bool
+    x .== y = not (x ./= y)
+    x ./= y = not (x .== y)
+
+-- We implemented the function bodies for the functions that Eq defines in terms
+-- of mutual recursion.
+
+-- The following data type defines the states of a traffic light. We won't derive
+-- any class instances for it; we're going to write up some instances by hand.
+data TrafficLight = Red | Yellow | Green
+
+-- Now here's how we make it an instance of Eq
+instance Eq TrafficLight where
+    Red == Red = True
+    Green == Green = True
+    Yellow == Yellow = True
+    _ == _ = False
+
+-- We used the "instance" keyword
+-- "class" is for defining new typeclasses
+-- "instance" is for making our types instances of typeclasses
+
+-- When we defined Eq, we used 'a' as the type variable to play the role of
+-- whichever type would be made an instance later on.  When defining the instance,
+-- we replaced 'a' with the actual type.
+
+-- Because in the Eq typeclass, == was defined in terms of /= and vise versa,
+-- we only had to overwrite one of them in the instance declaration. This is
+-- called a minimal complete definition for the typeclass.
+
+-- If the definition of the Eq typeclass only included the first two lines, we
+-- would have to define BOTH == and /= in our instance, which would be significantly
+-- longer.
+
+-- Now let's make this data type an instance of Show by hand, as well.
+instance Show TrafficLight where
+    show Red = "Red light"
+    show Yellow = "Yellow light"
+    show Green = "Green light"
+
+-- Typeclasses can also be subclasses of other typeclasses.
+-- The class declaration for the Num typeclass starts with
+--
+--      class (Eq a) => Num a where
+--
+-- This essentially says that a type must be an instance of Eq before we can
+-- make it an instance of Num.
+
+-- Now, how do we apply typeclasses to non-concrete types?  For example, we cannot
+-- use Maybe as a concrete type (like Char or Int).  Maybe is a type constructor
+-- that takes one parameter and then produces a concrete type.
+data Maybe' a = Nothing' | Just' a
+
+-- So we can do:
+instance (Eq m) => Eq (Maybe' m) where
+    Just' x == Just' y = x == y
+    Nothing' == Nothing' = True
+    _ == _ = False
+
+-- Note the class constraint on this instance declaration. We are saying this:
+-- we want all types of the form Maybe m to be part of the Eq typeclass, but
+-- only those types where m (the contents of Maybe) is also a part of Eq.
+
+-- Must of the time, class constraints in class declarations are used for making
+-- a typeclass a subclass of another typeclass. Class constraints in instance
+-- declarations are used to express requirements about the contents of some type.
+-- Here, we required the contents of Maybe to also be part of the Eq typeclass.
+
+{----------------------}
+{- A YES-NO TYPECLASS -}
+{----------------------}
+
+-- In Javascript, 0, "", and false will evalulate to False. But any nonempty
+-- string will evaluate to True.  Let's try to implement this type of behavior.
+
+-- We start with a class declaration.
+class YesNo a where
+    yesno :: a -> Bool
+
+-- This defines one function that takes a value considered to hold some concept
+-- of true-ness and gives us a concrete truth value (Bool) in return.
+
+-- Now, to define some instances. For numbers, we assume that any value that isn't
+-- 0 is true-ish and that 0 is false-ish.
+instance YesNo Int where
+    yesno 0 = False
+    yesno _ = True
+
+-- Empty lists (and by extension, strings) are a no-ish value, while non-empty lists
+-- are a yes-ish value.
+instance YesNo [a] where
+    yesno [] = False
+    yesno _ = True
+
+-- Bool itself also holds true-ness and false-ness
+instance YesNo Bool where
+    yesno = id
+
+-- the 'id' in this instance is a standard library function that takes a paramter
+-- and returns the same thing, which is what we would be writing here anyway
+
+-- Let's make 'Maybe a' and instance as well.
+instance YesNo (Maybe a) where
+    yesno (Just _) = True
+    yesno Nothing = False
+
+-- An empty Tree (defined earlier) is false-ish and anything that isn't empty
+-- is true-ish.
+instance YesNo (Tree a) where
+    yesno EmptyTree = False
+    yesno _ = True
+
+-- With our TrafficLight, we can consider Red to be false-ish and anything else
+-- to be true-ish.
+instance YesNo TrafficLight where
+    yesno Red = False
+    yesno _ = True
+
+-- Now let's make a function that handles an if statement with YesNO values
+yesnoIf :: (YesNo y) => y -> a -> a -> a
+yesnoIf yesnoVal yesResult noResult = if yesno yesnoVal then yesResult else noResult
+
+{-------------------------}
+{- THE FUNCTOR TYPECLASS -}
+{-------------------------}
