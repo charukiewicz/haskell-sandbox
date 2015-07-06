@@ -536,3 +536,108 @@ yesnoIf yesnoVal yesResult noResult = if yesno yesnoVal then yesResult else noRe
 {-------------------------}
 {- THE FUNCTOR TYPECLASS -}
 {-------------------------}
+
+-- So far we have seen a number of typeclasses in the standard library.  We have
+-- seen Ord, Eq, Show, Read. Now we are going to look at the Functor typeclass,
+-- which is for things that can be mapped over.
+
+-- Let's look at the implementation
+class Functor f where
+    fmap :: (a -> b) -> f a -> f b
+
+-- We can see that the fmap function type definition is interesting in that
+-- it contains type variables that are not concrete types. The 'f' is not a
+-- concrete type (a type a value can hold, like Int, Bool, or Maybe String),
+-- but a type constructor that takes one parameter.
+--
+-- Recap: 'Maybe Int' is a conrete type, but Maybe is a type constructor that
+-- takes one type as the parameter.
+
+-- We see that fmap takes a function from one type to another and a functor
+-- applied with one type and returns a functor applied with another type.
+--
+-- This is similar to the type signature of map, 'map :: (a -> b) -> [a] -> [b]'
+-- We see that 'map' is just 'fmap' that works only on lists.
+
+-- Here's how the list is an instance of the Functor typeclass.
+instance Main.Functor [] where
+    fmap = map
+
+-- Now let's implement the Maybe instance of Functor.
+instance Main.Functor Maybe where
+    fmap f (Just x) = Just (f x)
+    fmap f Nothing = Nothing
+
+-- Notice how our type variable is 'Maybe' and not 'Maybe m'. We did not want a
+-- concrete type (as opposed to our YesNo typeclass, where we did).
+
+-- Now let's implement the Tree instance of Functor.
+instance Main.Functor Tree where
+    fmap f EmptyTree = EmptyTree
+    fmap f (Node x leftsub rightsub) = Node (f x) (Main.fmap f leftsub) (Main.fmap f rightsub)
+
+-- Now let's implement the Either instance. Note that the Functor typeclass
+-- wants a type constructor that takes only one type parameter, but Either
+-- takes two.  So we will partially apply Either.
+instance Main.Functor (Either a) where
+    fmap f (Right x) = Right (f x)
+    fmap f (Left x) = Left x
+
+-- To wrap up, we have seen that the Functor typeclass enables mapping over a
+-- particular type. A quick way of recognizing a type that can be mapped over
+-- is thinking whether or not the type is a container. List, Maybe, Tree, etc.
+
+{---------------------------}
+{- KINDS AND SOME TYPE-FOO -}
+{---------------------------}
+
+-- Type constructors take other types as parameters to eventually produce concrete
+-- types, just like how functions take values as parameteres to produce values.
+-- Type constructors can be partially applied just like functions can.
+
+-- In this section, we'll formally define how types are applied to type constructors.
+
+-- Types are little labels that values carry so that we can reason about the values.
+-- But types also have their own little labels, called kinds.  A kind is somewhat
+-- like a type of a type.
+
+-- We can use the :k command in GHCi to examine the kind of a type.
+
+-- :k Int
+-- Int :: *             - A '*' represents a concrete type.
+
+-- :k Maybe
+-- Maybe :: * -> *      - The maybe type constructors takes one concrete type (Int)
+--                        and returns a concrete type (Mabye Int)
+
+-- :k Maybe Int
+-- Maybe Int :: *       - The concrete type output.
+
+-- :k Either
+-- Either :: * -> * -> *    - Either takes two concrete types and produces a concrete type.
+
+-- To make Either part of the Functor typeclass, we had to partially apply it
+-- because Functor wants types of kind '* -> *' and Either is '* -> * -> *'
+
+
+-- Now, consider the following typeclass
+class Tofu t where
+    tofu :: j a -> t a j
+
+-- How would we make a type that could be an instance of the Tofu typeclass?
+--
+-- Since 'j a' is used as the type of value that the tofu function takes as a
+-- parameter, it has to have a kind of *.
+--
+-- We assume * for 'a' and so we can infer that 'j' has to have a kind of * -> *
+--
+-- We see that 't' has to produce a concrete value and it takes two types.
+--
+-- Knowing that 'a' has kind of * and 'j' has kind of * -> *, we infer that 't'
+-- has to have a kind of * -> (* -> *) -> *
+--
+-- So it takes a concrete type 'a', a type constructor that takes one concrete
+-- type 'j' and produces a concrete type.
+
+-- Now let's make a type with kind of * -> (* -> *) -> *
+data Frank a b = Frank {frankField :: b a} deriving (Show)
