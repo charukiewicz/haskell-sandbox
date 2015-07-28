@@ -641,3 +641,27 @@ class Tofu t where
 
 -- Now let's make a type with kind of * -> (* -> *) -> *
 data Frank a b = Frank {frankField :: b a} deriving (Show)
+
+-- Now we make Frank and instance of Tofu
+instance Tofu Frank where
+    tofu = Frank
+
+-- Now for some more type-foo.  We have this data type:
+data Barry t k p = Barry { yabba :: p, dabba :: t k }
+
+-- We want to make Barry an instance of Functor.  Functor wants types of kind
+-- * -> *, but Barry looks like something -> something -> something -> *.
+--
+-- We can infer:
+--      - p is a concrete type a thus has a kind of *
+--      - k is also a concrete type and a kind of *
+--      - t by extension has a kind of * -> *
+--
+-- Now we replace those somethings to get (* -> *) -> * -> * -> *
+--
+-- We can verify this using :k Barry in GHCi
+
+-- Now we know that to make this an instance of Functor, we have to partially
+-- apply the first two type parameters so we're left with * -> *.
+instance Main.Functor (Barry a b) where
+    fmap f (Barry {yabba = x, dabba = y}) = Barry {yabba = f x, dabba = y}
