@@ -43,7 +43,7 @@
 -- An I/O action will be performed when we give it a name of main and then run
 -- our program.
 
--- No, having the whole program be just one I/O action is limiting. We use do
+-- But having the whole program be just one I/O action is limiting. We use do
 -- syntax to glue together several I/O actions into one.
 
 {- >> helloname.hs <<
@@ -82,10 +82,10 @@
 
 {-
 
-    main = do  
-        putStrLn "Hello, what's your name?"  
-        name <- getLine  
-        putStrLn $ "Read this carefully, because this is your future: " ++ tellFortune name  
+    main = do
+        putStrLn "Hello, what's your name?"
+        name <- getLine
+        putStrLn $ "Read this carefully, because this is your future: " ++ tellFortune name
 
 -}
 
@@ -107,9 +107,9 @@
 
 {-
 
-    main = do  
-        foo <- putStrLn "Hello, what's your name?"  
-        name <- getLine  
+    main = do
+        foo <- putStrLn "Hello, what's your name?"
+        name <- getLine
         putStrLn ("Hey " ++ name ++ ", you rock!")
 
 -}
@@ -134,13 +134,13 @@
 
 {- >> firstlast.hs <<
 
-main = do  
-    putStrLn "What's your first name?"  
-    firstName <- getLine  
-    putStrLn "What's your last name?"  
-    lastName <- getLine  
-    let bigFirstName = map toUpper firstName  
-        bigLastName = map toUpper lastName  
+main = do
+    putStrLn "What's your first name?"
+    firstName <- getLine
+    putStrLn "What's your last name?"
+    lastName <- getLine
+    let bigFirstName = map toUpper firstName
+        bigLastName = map toUpper lastName
     putStrLn $ "hey " ++ bigFirstName ++ " " ++ bigLastName ++ ", how are you?"
 
 -}
@@ -150,16 +150,16 @@ main = do
 
 {- >> reversewords.hs <<
 
-main = do   
-    line <- getLine  
-    if null line  
-        then return ()  
-        else do  
-            putStrLn $ reverseWords line  
-            main  
-  
-reverseWords :: String -> String  
-reverseWords = unwords . map reverse . words  
+main = do
+    line <- getLine
+    if null line
+        then return ()
+        else do
+            putStrLn $ reverseWords line
+            main
+
+reverseWords :: String -> String
+reverseWords = unwords . map reverse . words
 
 -}
 
@@ -181,13 +181,13 @@ reverseWords = unwords . map reverse . words
 
 {-
 
-main = do  
-    return ()  
-    return "HAHAHA"  
-    line <- getLine  
-    return "BLAH BLAH BLAH"  
-    return 4  
-    putStrLn line  
+main = do
+    return ()
+    return "HAHAHA"
+    line <- getLine
+    return "BLAH BLAH BLAH"
+    return 4
+    putStrLn line
 
 -}
 
@@ -267,11 +267,152 @@ main = do
                   function to map over the list. useful in instances of use of
                   lambdas and do notation. see forM_test.hs
 
+-}
 
+{---------------------}
+{- FILES AND STREAMS -}
+{---------------------}
 
+-- We've seen getChar and getLine (I/O actions that read a character/line from
+-- input, respectively).  Now we will meet getContents, which is an I/O action
+-- that reads everything from standard input until it encounters an EOF character.
 
+-- getContents has type of getContents :: IO String.  getContents does lazy I/O,
+-- meaning that it will read from input only as needed.
 
+-- To demonstrate how getContents works, we'll repurpose our earlier program that
+-- used the forever function.
+
+{- >> capslocker.hs
+
+    import Control.Monad
+    import Data.Char
+
+    main = forever $ do
+        l <- getLine
+        putStrLn $ map toUpper l
 
 -}
 
+-- Now compiling (ghc --make capslocker) and running this by typing
+--
+-- $ cat haiku.txt | ./capslocker
+--
+-- will result in the file using haiku.txt as input.  But we can make this better
+-- by using getContents.
 
+{- >> capslocker2.hs
+
+    import Data.Char
+
+    main = do
+        contents <- getContents
+        putStr (map toUpper contents)
+
+-}
+
+-- Now let's make a program that takes inputs and only prints out lines that are
+-- shorter than 10 characters:
+
+{- >> shortlines.hs
+
+    main = do
+        contents <- getContents
+        putStr (shortLinesOnly contents)
+
+    shortLinesOnly :: String -> String
+    shortLinesOnly input =
+        let allLines = lines input
+            shortLines = filter (\line -> length line < 10) allLines
+            result = unlines shortLines
+        in  result
+
+-}
+
+-- The I/O part of the program is as short as possible.  We implemented it by
+-- reading the input contents, running a function on them, and then printing
+-- out what the function gave back.
+
+-- The shortLinesOnly function works as follows:
+--      1. It takes a string "short\nlooooooooooong\nshort again"
+--      2. It uses the `lines` function to convert the string to a list of strings
+--      3. It passes this list through an anonymous filter function
+--      4. It converts the resulting list back into an output string
+--      5. It returns the result
+
+-- The pattern of getting a string from input, transforming it with a function,
+-- and then outputting that is so common that there exists a function to make
+-- doing this easier, called interact
+
+-- interact takes a function of type String -> String as a parameter and returns
+-- an I/O action that will take some input, run that function on it, and then print out the function's result. Let's modify our program to use that
+
+{- >> shortlines2.hs
+
+    main = interact shortLinesOnly
+
+    shortLinesOnly :: String -> String
+    shortLinesOnly input =
+        let allLines = lines input
+            shortLines = filter (\line -> length line < 10) allLines
+            result = unlines shortLines
+        in  result
+
+-}
+
+-- In fact, this can be achieved with much less code (at the cost of readability)
+-- and to demonstrate our function composition:
+
+{- >> shortlines3.hs
+
+    main = interact $ unlines . filter ((<10) . length) . lines
+
+-}
+
+-- Now let's make a program that continuously reads a line and tells us if the
+-- line is a palindrome or not. One option would be to use getLine, determine
+-- whether the input is a palindrome, then run main again. But this is simplified
+-- by using interact.
+
+{- >> isPalindrome.hs
+
+    respondPalindromes contents = unlines (map (\xs ->
+     if isPalindrome xs then "palindrome" else "not a palindrome") (lines contents))
+        where isPalindrome xs = xs == reverse xs
+
+-}
+
+-- It is worth nothing that even thoughw e made a program that transforms one
+-- big string of input into another, it acts like a program that does it line
+-- by line.  Haskell is lazy and wants to print the first line of the result
+-- string, and does so the moment it has the first line of input.
+
+-- READING AND WRITING FILES
+
+-- One way to think about reading from the terminal is to imagine that it's like
+-- reading from a special file (stdin). Same goes for writing to it (stdout)
+
+-- Let's start out with a program that just reads from a file and prints it out
+-- to the terminal.
+
+{- >> girlfriend.hs
+
+    import System.IO
+
+    main = do
+        handle <- openFile "girlfriend.txt" ReadMode
+        contents <- hGetContents handle
+        putStr contents
+        hClose handle
+
+-}
+
+-- Let's go over this line by line. Our program is several actions glued together
+-- with a do block.
+--
+--      1. In the first line, we use a new function called openFile with type:
+--
+--          openFile :: FilePath -> IOMode -> IO Handle
+--
+--         FilePath is just a type synonym for String.
+--         IOMode is a type that represents what we want to do with our file.
