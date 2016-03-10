@@ -8,6 +8,9 @@
 
 -}
 
+import System.IO
+
+
 -- In imperative languages, you get things done by giving computers a series of
 -- steps to execute. In functional programming, you define what things are.
 -- In Haskell, functions produce no side-effects.  A particular input given to
@@ -415,4 +418,150 @@ main = do
 --          openFile :: FilePath -> IOMode -> IO Handle
 --
 --         FilePath is just a type synonym for String.
+--
 --         IOMode is a type that represents what we want to do with our file.
+--
+--          data IOMode = ReadMode | WriteMode | AppendMode | ReadWriteMode
+--
+--         It will return an I/O action that opens the specified file in
+--         the specified mode.  If we bind that action to something we get
+--         a Handle (which represents where our file is).
+--
+--      2. In the next line, hGetContents takes a Handle and returns an IO String
+--
+--         This is the same as getContents except it takes a file handle rather
+--         than standard (terminal) input.  The function will read the file
+--         as needed.
+--
+--      3. putStr contents will print the contents to std out
+--
+--      4. hClose takes a handle and returns an I/O action that closes the file
+--
+
+-- An alternative to doing all of this is to use the withFile function
+--
+-- withFile :: FilePath -> IOMode -> (Handle -> IO a) -> IO a
+--
+-- It takes a path to a file, an IOMode, and then it takes a function that
+-- takes a handle and returns some I/O action.  It returns an I/O action
+-- that opens that file, does something to it, and closes it.
+
+{- girlfriend-withFile.hs
+
+main = do
+    withFile "girlFriend.txt" ReadMode (\handle -> do
+        contents <- hGetContents handle
+        putStr contents)
+
+-}
+
+-- Let's implement our own withFile function:
+
+withFile' :: FilePath -> IOMode -> (Handle -> IO a) -> IO a
+withFile' path mode f = do
+    handle <- openFile path mode
+    result <- f handle
+    hClose handle
+    return result
+
+-- Like hGetContents in relation to getContents for a specific file,
+-- we also have hGetLine, hPutStr, hPutStrLn, hGetChar, etc.
+
+-- However, if our goal is to load files and treat their contents as strings,
+-- this is a common operation and we have functions to make our work easier:
+--
+--  readFile :: FilePath -> IO String
+--
+-- readFile takes a path to a file and returns an I/O action that will read
+-- the file and bind its contents to something as a string. It replaces
+-- using openFile and then doing hGetContents
+
+{- girlfriend-readFile.hs
+
+    main = do
+        contents <- readFile "girlfriend.txt"
+        putStr contents
+
+-}
+
+--  writeFile :: FilePath -> String -> IO ()
+--
+--  Takes a path to a file and a string to write to that file and returns an
+--  I/O action that will do the writing.  It will overwrite existing files
+
+{- girlFriend-writeFile.hs
+
+    main = do
+        contents <- readFile "girlfriend.txt"
+        writeFile "girlfriendcaps.txt" (map toUpper contents)
+
+-}
+
+-- appendFile :: FilePath -> String -> IO ()
+--
+-- Works just like writeFile, except appends to a file rather than overwriting it
+
+{- todo.hs
+
+    main = do
+        todoItem <- getLine
+        appendFile "todo.txt" (todoItem ++ "\n")
+
+-}
+
+
+-- Since we mentioned that using hGetContents is lazy, it is worth noting that
+-- using this function is like connecting a pipe from the file to the output.
+--
+-- We can think of files as streams (like we think of lists).  This will read
+-- one line at a time and print it to the terminal as it goes along.
+--
+-- Text files are usually line-buffered.  Binary files are block-buffered.
+--
+-- We can control how exactly buffering is done using the hSetBuffering function
+--
+-- It takes a BufferMode and returns an I/O action that sets the buffering.
+-- 
+--  data BufferMode = NoBuffering | LineBuffering | BlockBuffering (Maybe Int)
+--
+-- Here is our earlier withFile example with block buffering
+
+{-
+
+    main = do
+        withFile "something.txt" ReadMode (/handle -> do
+            hSetBuffering handle $ BlockBuffering (Just 2048)
+            contents <- hGetContents handle
+            putStr contents)
+
+-}
+
+-- Reading files in bigger chunks minimizes disk access or when our file
+-- is a slow network resource.
+--
+-- We can also use the hFlush function to dump the contents of the handle
+-- and free the data to make it available to other programs running simultaneously
+
+-- Now let's make a program to remove from our todo list
+
+{- todoRemove.hs
+
+    main = do
+        handle <- openFile "todo.txt" ReadMode
+        (tempName, tempHandle) <- openTempFile "." "temp"
+        contents <- hGetContents handle
+        let todoTasks = lines contents
+            numberedTasks = zipWith (\n line -> show n ++ " - " ++ line) [0..] todoTasks
+        putStrLn "These are your todo items:"
+        putStr $ unlines numberedTasks
+        putStrLn "Which one do you want to delete?"
+        numberString <- getLine
+        let number = read numberString
+            newTodoItems = delete (todoTasks !! number) todoTasks
+        hPutStr tempHandle $ unlines newTodoItems
+        hClose handle
+        hClose tempHandle
+        removeFile "todo.txt"
+        renameFile tempName "todo.txt"
+
+-}
