@@ -9,6 +9,7 @@
 -}
 
 import System.IO
+import System.Random
 
 
 -- In imperative languages, you get things done by giving computers a series of
@@ -593,4 +594,125 @@ withFile' path mode f = do
 
 -}
 
+{--------------}
+{- RANDOMNESS -}
+{--------------}
 
+-- import System.Random
+
+-- In most languages, you can call a function that will give you back a pseudo-random
+-- number.  Since Haskell has referential transparency, any function that takes a certain
+-- set of parameters must always produce the same result. This changes how randomness
+-- must be handled in Haskell.
+
+-- The System.Random module gives us facilities for randomness.  It includes the
+-- following functions:
+--
+--      random :: (RandomGen g, Random a) => g -> (a, g)
+--
+--          - The RandomGen typeclass is for types that can act as a source of
+--            randomness
+--          - The Random typeclass is for things that can take random values
+--            (e.g. a boolean, a number, but not a function)
+--
+--      mkStdGen :: Int -> StrGen
+--          
+--          - Takes a number and gives us a random generator.
+--
+--      randoms :: (RandomGen g, Random a) => g -> [a]
+--
+--          - Takes a generator and returns an infinite sequence of values
+--            based on that generator.
+--
+--      randomR :: (RandomGen g, Random a) => (a, a) -> g -> (a, g)
+--          
+--          - Takes as its first parameter a pair of values that set the lower
+--            and upper bounds of the final value produced
+--
+--      randomRs :: (RandomGen g, Random a) => (a, a) -> g -> [a]
+--
+--          - Produces a stream of random values within our defined range
+--
+
+-- Let's use random and mkStdGen together to give us a (hardly) random number
+-- Since random is a polymorphic function, we need to specify the output type
+randomNumber = random (mkStdGen 100) :: (Int, StdGen)
+    -- gives (-3633736515773289454,693699796 2103410263)
+
+-- Now a random boolean
+randomBoolean = random (mkStdGen 100) :: (Bool, StdGen)
+    -- gives (True,4041414 40692)
+
+-- Now a random float
+randomFloat = random (mkStdGen 100) :: (Float, StdGen)
+    -- gives (0.6512469,651872571 1655838864)
+
+-- Let's make a function that simulates tossing a coin three times
+-- We will use the generator that the random function outputs
+-- in our successive calls to it
+threeCoins :: StdGen -> (Bool, Bool, Bool)
+threeCoins gen =
+    let (firstCoin, newGen1)    = random gen
+        (secondCoin, newGen2)   = random newGen1
+        (thirdCoin, newGen3)    = random newGen2
+    in (firstCoin, secondCoin, thirdCoin)
+
+-- can be invoked using `threeCoins (mkStdGen 100)`, etc.
+
+-- We did not specify an output type to the random gen calls (e.g. random gen :: (Bool, StdGen))
+-- because we already specified that we wanted booleans in the function type declaration.
+
+-- There is a function called randoms that takes a generator and returns
+-- an infinite sequence of values based on that generator
+
+
+fiveRandomNumbers = take 5 $ randoms (mkStdGen 11) :: [Int]
+
+fiveRandomBools = take 5 $ randoms (mkStdGen 11) :: [Bool]
+
+fiveRandomFloats = take 5 $ randoms (mkStdGen 11) :: [Float]
+
+-- The randoms function cannot give us back a generator because it has to potentially
+-- generate an infinite list of numbers, so we can't give the new random generator back
+
+-- We can make a function that generates a finite stream of numbers and a new generator
+finiteRandoms :: (RandomGen g, Random a, Num n, Eq n) => n -> g -> ([a], g)
+finiteRandoms 0 gen = ([], gen)
+finiteRandoms n gen =
+    let (value, newGen) = random gen
+        (restOfList, finalGen) = finiteRandoms (n-1) newGen
+    in  (value:restOfList, finalGen)
+
+-- Suppose we want a random value in some range.  We can use randomR for that.
+dieRoll = randomR (1,6) (mkStdGen 65535) :: (Int, StdGen)
+
+-- Or we can use randomRs to produce a random stream within our defined ranges
+randomString = take 10 $ randomRs ('a','z') (mkStdGen 3) :: [Char]
+
+-- Everything we have done so far involves seeding our random number generator
+-- with a hard coded value in our code. Problem is that in real code, this
+-- would always produce the same results. This is where I/O comes into play.
+
+-- We can use the (getStdGen :: IO StdGen) function to retrieve a random number
+-- generator from the system when we bind it to something.
+
+{- random-number.hs
+
+    import System.Random
+
+    main = do
+        gen <- getStdGen
+        putStr $ take 20 (randomRs ('a','z') gen)
+
+-}
+
+-- Note that performing getStdGen twice will ask for the same global generator twice
+-- We should use (newStdGen :: IO StdGen), which updates the global generator from
+-- the initial getStdGen call.
+
+-- Let's write a program that will make the user guess which number it's thinking of.
+
+{- random-guess.hs
+
+
+-}
