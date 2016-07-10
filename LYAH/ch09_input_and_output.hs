@@ -569,3 +569,28 @@ withFile' path mode f = do
 {--------------------------}
 {- COMMAND LINE ARGUMENTS -}
 {--------------------------}
+
+-- The System.Environment module has two basic I/O actions:
+--
+--   getArgs :: IO [String] - will get the arguments that the program was run
+--   with and contain a result with a list of the args
+-- 
+--   getProgName :: IO String - contains the program name
+--
+
+{- command-line.hs
+
+    import System.Environment   
+    import Data.List  
+      
+    main = do  
+       args <- getArgs  
+       progName <- getProgName  
+       putStrLn "The arguments are:"  
+       mapM putStrLn args  
+       putStrLn "The program name is:"  
+       putStrLn progName  
+
+-}
+
+
