@@ -10,7 +10,8 @@
 
 import System.IO
 import System.Random
-
+import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as S
 
 -- In imperative languages, you get things done by giving computers a series of
 -- steps to execute. In functional programming, you define what things are.
@@ -522,7 +523,7 @@ withFile' path mode f = do
 -- We can control how exactly buffering is done using the hSetBuffering function
 --
 -- It takes a BufferMode and returns an I/O action that sets the buffering.
--- 
+--
 --  data BufferMode = NoBuffering | LineBuffering | BlockBuffering (Maybe Int)
 --
 -- Here is our earlier withFile example with block buffering
@@ -575,22 +576,22 @@ withFile' path mode f = do
 --
 --   getArgs :: IO [String] - will get the arguments that the program was run
 --   with and contain a result with a list of the args
--- 
+--
 --   getProgName :: IO String - contains the program name
 --
 
 {- command-line.hs
 
-    import System.Environment   
-    import Data.List  
-      
-    main = do  
-       args <- getArgs  
-       progName <- getProgName  
-       putStrLn "The arguments are:"  
-       mapM putStrLn args  
-       putStrLn "The program name is:"  
-       putStrLn progName  
+    import System.Environment
+    import Data.List
+
+    main = do
+       args <- getArgs
+       progName <- getProgName
+       putStrLn "The arguments are:"
+       mapM putStrLn args
+       putStrLn "The program name is:"
+       putStrLn progName
 
 -}
 
@@ -616,7 +617,7 @@ withFile' path mode f = do
 --            (e.g. a boolean, a number, but not a function)
 --
 --      mkStdGen :: Int -> StrGen
---          
+--
 --          - Takes a number and gives us a random generator.
 --
 --      randoms :: (RandomGen g, Random a) => g -> [a]
@@ -625,7 +626,7 @@ withFile' path mode f = do
 --            based on that generator.
 --
 --      randomR :: (RandomGen g, Random a) => (a, a) -> g -> (a, g)
---          
+--
 --          - Takes as its first parameter a pair of values that set the lower
 --            and upper bounds of the final value produced
 --
@@ -714,5 +715,120 @@ randomString = take 10 $ randomRs ('a','z') (mkStdGen 3) :: [Char]
 
 {- random-guess.hs
 
+    import System.Random
+    import Control.Monad(when)
+
+    main = do
+        gen <- getStdGen
+        askForNumber gen
+
+    askForNumber :: StdGen -> IO ()
+    askForNumber gen = do
+        let (randNumber, newGen) = randomR (1,10) gen :: (Int, StdGen)
+        putStr "Which number in the range from 1 to 10 am I thinking of? "
+        numberString <- getLine
+        when (not $ null numberString) $ do
+            let number = read numberString
+            if randNumber == number
+                then putStrLn "You are correct!"
+                else putStrLn $ "Sorry, the number was " ++ show randNumber
+            askForNumber newGen
 
 -}
+
+{---------------}
+{- BYTESTRINGS -}
+{---------------}
+
+-- import qualified Data.ByteString.Lazy as B
+-- import qualified Data.ByteString as S
+
+-- Lists are cool, and they benefit from laziness in many situations. However,
+-- because the String type is implemented as list of Chars, the default String
+-- type in Haskell is slow.
+
+-- The overhead is particularly a problem when reading and manipulating big files.
+-- Haskell's bytestring type comes to the rescue. Bytestrings are similar to lists,
+-- ecept that each element is one byte (8 bits). They also handle laziness
+-- differently.
+
+-- Strict bytestrings (Data.ByteString) represent a series of bytes in an array.
+-- You cannot have things like infinite strict bytestrings. If you evaluate the
+-- first byte, you have to evaluate it whole. The upside with this implementation
+-- is that there is no thunks, but the tradeoff is that they are likely to fill
+-- up memory faster.
+
+-- Lazy bytestrings (Data.ByteString.Lazy) are not quite az lazy as lists. In a
+-- list, there as as many thunks as there are elements, which sometimes makes
+-- them slow. Lazy bytestrings are stored in chunks (not thunks) of size 64K.
+-- So when a byte in a lazy bytestring is evaluated, the first 64K will be
+-- evaluated.
+
+-- We have several functions that are similar to Data.List functions in the
+-- ByteString modules.
+--
+--      pack :: [Word8] -> ByteString
+--
+--          Takes a list of bytes and turns it into a bytestring
+--
+--      unpack :: ByteString -> [Word8]
+--
+--          Takes a bytestring and turns it into a list of bytes
+--
+--      fromChunks :: [Data.ByteString] -> Data.ByteString.Lazy
+--
+--          Takes a list of strict bytestrings and converts to a lazy one
+--
+--      toChunks :: Data.ByteString.Lazy -> [Data.ByteString]
+--
+--          Takes a lazy bytestring and converts to a list of strict ones
+--
+--      cons :: GHC.Word.Word8 -> Data.ByteString.Lazy -> Data.ByteString.Lazy
+--
+--          Takes a byte and a bytestring and puts the byte at the bginning.
+--          Since it is lazy, it will make a new chunk even if the first chunk
+--          is not full.
+--
+--      cons' :: GHC.Word.Word8 -> Data.ByteString.Lazy -> Data.ByteString.Lazy
+--
+--          The strict version of cons. Better to use for lots of insertions.
+--
+--      Other functions similar to ones in Data.List include head, tail, init,
+--      null, length, map, reverse, foldl, foldr, concat, takeWhile, filter, etc.
+--
+--      readFile :: FilePath -> IO ByteString
+--
+--          Similar to readFile in the System.IO module, reads the file into
+--          chunks (if lazy) or entirely into memory (if strict).
+
+packedList = B.pack [99,97,110]
+
+packedListRange = B.pack [98..120]
+
+-- We are going to write a program that takes two filenames as CLI arguments
+-- and copies the first file into the second file.
+
+{- bytestring-copy.hs
+
+    import System.Environment
+    import qualified Data.ByteString.Lazy as B
+
+    main = do
+        (fileName1:fileName2:_) <- getArgs
+        copyFile fileName1 fileName2
+
+    copyFile :: FilePath -> FilePath -> IO ()
+    copyFile source dest = do
+        contents <- B.readFile source
+        B.writeFile dest contents
+
+-}
+
+-- Note that the program that does not use bytestrings looks very similar.
+-- Sometimes conversion of a program from normal to bytestrings just requires
+-- doing the necessary imports and putting qualified module names in front
+-- of some functions.
+
+{--------------}
+{- EXCEPTIONS -}
+{--------------}
