@@ -832,3 +832,94 @@ packedListRange = B.pack [98..120]
 {--------------}
 {- EXCEPTIONS -}
 {--------------}
+
+-- Haskell's type system allows us to handle unexpected values (e.g. Maybe),
+-- but we may encounter issues with pure code that does not use Maybe.
+-- This is where exceptions may be thrown (e.g. 4 `div` 0)
+
+-- However, exceptions even in pure code must be handled in IO code (e.g.
+-- in the main function's do block).  This creates a tension between keeping
+-- main slim and keeping code pure.
+
+-- We will look at errors in IO actions.  Consider the following:
+
+{-
+
+    import System.Environment  
+    import System.IO  
+      
+    main = do (fileName:_) <- getArgs  
+              contents <- readFile fileName  
+              putStrLn $ "The file has " ++ show (length (lines contents)) ++ " lines!"  
+
+-}
+
+-- If we run this function and fileName does not exist, we will get an error and
+-- program crash.  One alternative is to use the doesFileExist function.
+
+{-
+
+    import System.Environment  
+    import System.IO  
+    import System.Directory  
+
+    main = do (fileName:_) <- getArgs  
+          fileExists <- doesFileExist fileName  
+          if fileExists  
+              then do contents <- readFile fileName  
+                      putStrLn $ "The file has " ++ show (length (lines contents)) ++ " lines!"  
+              else do putStrLn "The file doesn't exist!"  
+
+-}
+
+-- doesFileExist has a type of FilePath -> IO Bool, so we need to use the
+-- "draw from" `<-` construct
+
+-- To deal with exceptions, we need to use the `catch` function. It takes two
+-- parameters, an I/O action and an exception handler.
+
+-- Here's the same functionailty as above, except we put the main function
+-- through a catch handler
+
+{-
+
+    import System.Environment  
+    import System.IO  
+    import System.IO.Error  
+      
+    main = toTry `catch` handler  
+                  
+    toTry :: IO ()  
+    toTry = do (fileName:_) <- getArgs  
+               contents <- readFile fileName  
+               putStrLn $ "The file has " ++ show (length (lines contents)) ++ " lines!"  
+      
+    handler :: IOError -> IO ()  
+    handler e = putStrLn "Whoops, had some trouble!"  
+
+-}
+
+-- The handler function can include checks for specific errors with the
+-- corresponding functions
+
+{-
+
+    ... same as above
+
+    handler :: IOError -> IO ()  
+    handler e  
+        | isDoesNotExistError e = putStrLn "The file doesn't exist!"  
+        | otherwise = ioError e
+
+-}
+
+-- There are several error predicates that we can use with IOError:
+--   - isAlreadyExistsError
+--   - isDoesNotExistError
+--   - isAlreadyInUseError
+--   - isFullError
+--   - isEOFError
+--   - isIllegalOperation
+--   - isPermissionError
+--   - isUserError
+
